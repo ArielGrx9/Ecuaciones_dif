@@ -20,7 +20,7 @@ function App() {
   return (
     <>
     <div>
-      <h1>Hola putos</h1>
+      <h1>SI LA MAMI SI LA MAMI</h1>
     </div>
     </>
   )
