@@ -20,7 +20,7 @@ function App() {
   return (
     <>
     <div>
-      <h1>SI LA MAMI SI LA MAMI</h1>
+      <h1>AHORA SI MIS TIOS QUE TRANZA EH QUE TRAZA PUTOS</h1>
     </div>
     </>
   )
