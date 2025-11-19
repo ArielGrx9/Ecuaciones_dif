@@ -222,7 +222,7 @@ function EcDif() {
               value={type}
               onChange={(e) => setType(e.target.value)}
             >
-              <option value="Homogénea">Homogénea</option>
+              <option value="Homogénea">Polinomio característico</option>
               <option value="No Homogénea">Variacón de parámetros</option>
               <option value="No Homogénea">Coeficientes indeterminados</option>
             </select>
