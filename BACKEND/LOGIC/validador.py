@@ -26,3 +26,5 @@ def validar_solucion(y, coeficientes, g, x):
     residuo = sp.simplify(lhs - g)
 
     return residuo, sp.simplify(residuo) == 0
+
+

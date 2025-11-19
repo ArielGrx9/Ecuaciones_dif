@@ -1,0 +1,34 @@
+.resultado-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.resultado-card {
+  background: white;
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0px 3px 10px rgba(0,0,0,0.1);
+  transition: 0.2s ease;
+}
+
+.resultado-card:hover {
+  box-shadow: 0px 5px 20px rgba(0,0,0,0.15);
+}
+
+.resultado-title {
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.resultado-content {
+  font-size: 18px;
+  padding-left: 10px;
+}
+
+.paso-item {
+  margin-bottom: 12px;
+  padding: 10px;
+  background: #f3f3f3;
+  border-radius: 10px;
+}
