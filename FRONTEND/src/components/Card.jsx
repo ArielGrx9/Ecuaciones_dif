@@ -1,11 +1,7 @@
 import { useState } from "react";
 
-function validarExpreciones(expr) {
+function validarExpresiones(expr) {
   let normalizar = expr.toLowerCase();
-  // ach dime si quieres mas mmds despues de las 7:30 no puedo
-
-  //Derivada
-  normalizar = normalizar.replace(/\bdev\b/g, "der");
 
   // Seno
   normalizar = normalizar.replace(/\bsen\b/g, "sin");
@@ -21,67 +17,80 @@ function validarExpreciones(expr) {
   // Raíz
   normalizar = normalizar.replace(/\braiz\b/g, "sqrt");
   normalizar = normalizar.replace(/\braíz\b/g, "sqrt");
-  // Notación como √x
   normalizar = normalizar.replace(/√\(/g, "sqrt(");
   normalizar = normalizar.replace(/√([a-z0-9]+)/gi, "sqrt($1)");
 
   // Logaritmos
   normalizar = normalizar.replace(/\blogaritmo\b/g, "log");
-  normalizar = normalizar.replace(/\blog10\b/g, "log10");
-  normalizar = normalizar.replace(/\bln\b/g, "ln");
   normalizar = normalizar.replace(/\blog natural\b/g, "ln");
 
   // Variaciones de "e"
-  normalizar = normalizar.replace(/\be\^/g, "exp("); // e^x → exp(x
-  normalizar = normalizar.replace(/\bexp\(/g, "exp("); // exp → exp
+  normalizar = normalizar.replace(/\be\^/g, "exp(");
+  normalizar = normalizar.replace(/e\^([a-z0-9]+)/gi, "exp($1)");
 
-  // e^x sin paréntesis: e^x → exp(x)
-  normalizar = normalizar.replace(/e\^([a-z0-9]+)/g, "exp($1)");
+  // Exp
+  normalizar = normalizar.replace(/\bexponencial\b/g, "exp");
 
-  // potencias
+  // Potencias
   normalizar = normalizar.replace(/\bcuadrado\b/g, "^2");
   normalizar = normalizar.replace(/\bcubico\b/g, "^3");
   normalizar = normalizar.replace(/\bcúbico\b/g, "^3");
 
-  normalizar = normalizar.replace(/\bpi\b/g, "pi"); // ya normal
+  // Constantes
+  normalizar = normalizar.replace(/\bpi\b/g, "pi");
   normalizar = normalizar.replace(/\bπ\b/g, "pi");
 
-  // y''''  -> diff(y, x, 4)
+  // Derivadas
   normalizar = normalizar.replace(/([a-z])''''\b/g, "diff($1, x, 4)");
-
-  // y'''  -> diff(y, x, 3)
   normalizar = normalizar.replace(/([a-z])'''\b/g, "diff($1, x, 3)");
-
-  // y''  -> diff(y, x, 2)
   normalizar = normalizar.replace(/([a-z])''\b/g, "diff($1, x, 2)");
-
-  // y'  -> diff(y, x)
   normalizar = normalizar.replace(/([a-z])'\b/g, "diff($1, x)");
 
   return normalizar;
+}
+
+//Caracteres permitidos
+
+function esValida(expr) {
+  const patron = /^[0-9x-yz+\-*/^().\s\|a-záéíóúñ]+$/i;
+
+  return patron.test(expr);
 }
 
 function EcDif() {
   const [input, setInput] = useState("");
   const [type, setType] = useState("Homogénea");
   const [resultExpression, setResultExpression] = useState("");
+  const [error, setError] = useState("");
 
   const handleSend = () => {
-    const normalizar = validarExpreciones(input);
-    console.log(normalizar);
-    console.log(input);
-    console.log(type);
-    setResultExpression(normalizar);
+    // Validar sintaxis básica
+    if (!esValida(input)) {
+      setError("Error: La ecuación contiene caracteres no válidos.");
+      setResultExpression("");
+      return;
+    }
+
+    const normalizada = validarExpresiones(input);
+
+    // Si quedó vacía o sin sentido
+    if (!normalizada || normalizada.trim() === "") {
+      setError("Error: La ecuación no es válida.");
+      setResultExpression("");
+      return;
+    }
+
+    setError("");
+    setResultExpression(normalizada);
   };
 
   return (
     <div className="container py-5">
-      {/* Título */}
       <h2 className="text-center mb-4">
         Calculadora de ecuaciones diferenciales de orden superior
       </h2>
 
-      {/* Ingreso de función */}
+      {/* Ingreso de ecuación */}
       <div className="card shadow-sm mb-4">
         <div className="card-body">
           <h5 className="card-title">Ingresa tu ecuación</h5>
@@ -90,17 +99,15 @@ function EcDif() {
             <input
               type="text"
               className="form-control"
-              placeholder="f(x) = ..."
+              placeholder="Ejemplo: y'' + 3y' + 2y = 0"
               value={input}
               onChange={(e) => setInput(e.target.value)}
             />
 
-            {/* Boton */}
-            <button className="btn btn-danger" onChange={handleSend}>
+            <button className="btn btn-danger" onClick={handleSend}>
               Ir
             </button>
 
-            {/* Menu */}
             <select
               className="form-select"
               style={{ maxWidth: "180px" }}
@@ -112,20 +119,7 @@ function EcDif() {
             </select>
           </div>
 
-          <small className="text-muted">Ejemplo: x^2 + 3x - 2</small>
-        </div>
-      </div>
-
-      {/* Condiciones iniciales */}
-      <div className="card shadow-sm mb-4">
-        <div className="card-body">
-          <h5 className="card-title">Condiciones iniciales</h5>
-
-          <input
-            type="text"
-            className="form-control"
-            placeholder="Ej: x(0) = 2, x'(0) = -1"
-          />
+          {error && <p className="text-danger mt-2">{error}</p>}
         </div>
       </div>
 
@@ -138,7 +132,11 @@ function EcDif() {
             className="border p-3 bg-white rounded"
             style={{ minHeight: "120px" }}
           >
-            <p className="text-muted">El procedimiento aparecerá aquí...</p>
+            {resultExpression ? (
+              <p>{resultExpression}</p>
+            ) : (
+              <p className="text-muted">El procedimiento aparecerá aquí...</p>
+            )}
           </div>
         </div>
       </div>
@@ -147,7 +145,6 @@ function EcDif() {
       <div className="card shadow-sm mb-4">
         <div className="card-body">
           <h5 className="card-title">Gráfica</h5>
-
           <div
             className="border bg-white rounded d-flex justify-content-center align-items-center"
             style={{ height: "250px" }}
@@ -156,12 +153,13 @@ function EcDif() {
           </div>
         </div>
       </div>
+
       <footer className="bg-dark text-white py-3 mt-5">
         <div className="container text-center">
           <p className="mb-1">Segundo Parcial Ecuaciones Diferenciales</p>
           <small>
-            Desarrollado por Johan Uriel Marin Viñas Angel Ariel Garcia Ulices
-            Karsten Cruz Dereck
+            Desarrollado por Johan Uriel Marin Viñas – Angel Ariel Garcia –
+            Ulices Karsten Cruz – Dereck
           </small>
         </div>
       </footer>
