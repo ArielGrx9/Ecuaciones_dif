@@ -1,3 +1,8 @@
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+import uvicorn
+from pydantic import BaseModel
+from typing import List
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
@@ -5,6 +10,38 @@ import sympy as sp
 from sympy import symbols, Function, dsolve, Eq, exp, I, re, im, latex
 import warnings
 warnings.filterwarnings('ignore')
+
+
+class prueba(BaseModel):
+    respuesta : str
+
+
+app = FastAPI()
+
+origins = [
+    "http://localhost:5173"
+]
+
+app.add_middleware(
+     CORSMiddleware,
+     allow_origins = "*",
+     allow_credentials = True,
+     allow_methods = ["*"],
+     allow_headers =  ["*"]
+)
+
+
+memory_db = {"respuesta": "hola we"}
+
+@app.get("/hola")
+def si_la_mami():
+    return{"hola" : "we"}
+
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
 
 class EDHomogenea:
     def __init__(self):
@@ -240,4 +277,3 @@ def main():
         if continuar != 's':
             print("¡Hasta luego!")
             break
-        
