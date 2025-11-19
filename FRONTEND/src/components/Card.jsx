@@ -52,11 +52,34 @@ function validarExpresiones(expr) {
 //Caracteres permitidos
 
 function esValida(expr) {
-  const patron = /^[0-9x-yz+\-*/^().\s\|a-záéíóúñ]+$/i;
+  const patron = /^[0-9x-yz+\-*/^().\s\|a-z]+$/i;
 
-  return patron.test(expr);
+  const funcionesValidados = [
+    "sin",
+    "cos",
+    "tan",
+    "sqrt",
+    "log",
+    "ln",
+    "exp",
+    "diff",
+    "x",
+    "y",
+    "z",
+  ];
+
+  const palabras = expr.toLowerCase().match(/\b[a-zñáéíóú]+\b/g);
+
+  if (!palabras) return true;
+
+  for (let p of palabras) {
+    if (!funcionesValidados.includes(p)) {
+      return false;
+    }
+  }
+
+  return true;
 }
-
 function EcDif() {
   const [input, setInput] = useState("");
   const [type, setType] = useState("Homogénea");
@@ -158,8 +181,8 @@ function EcDif() {
         <div className="container text-center">
           <p className="mb-1">Segundo Parcial Ecuaciones Diferenciales</p>
           <small>
-            Desarrollado por Johan Uriel Marin Viñas – Angel Ariel Garcia –
-            Ulices Karsten Cruz – Dereck
+            Desarrollado por Johan Uriel Marin Viñas – Angel Ariel García –
+            Ulices Karsten Cruz – Derek Hernández Domínguez
           </small>
         </div>
       </footer>
