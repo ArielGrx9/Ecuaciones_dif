@@ -41,10 +41,18 @@ export default function App() {
     let payload, res;
 
     // Parse seguro de coeficientes
-    const coefList = coef
-       .split(",")
-      .map(c => Number(c.trim()))
-      .filter(n => !isNaN(n));
+ const coefList = coef
+  .split(",")
+  .map(c => c.trim())
+  .filter(c => c !== "" && c !== "-" && c !== "+")
+  .map(c => {
+    const num = parseFloat(c);
+    if (isNaN(num)) return null;
+    // Si es entero (como 1, -4, 2), lo mandamos como entero
+    return num % 1 === 0 ? parseInt(c, 10) : num;
+  })
+  .filter(n => n !== null);
+  
 
       const condicionesDict = parseCondiciones(condiciones);
 
