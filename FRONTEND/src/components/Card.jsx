@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+/* ------------------ normalizador de expresiones (tu versión) ------------------ */
 function validarExpresiones(expr) {
   let normalizar = expr.toLowerCase();
 
@@ -46,65 +47,149 @@ function validarExpresiones(expr) {
   normalizar = normalizar.replace(/([a-z])''\b/g, "diff($1, x, 2)");
   normalizar = normalizar.replace(/([a-z])'\b/g, "diff($1, x)");
 
+  // limpieza final
+  normalizar = normalizar.replace(/\s+/g, " ").trim();
+
   return normalizar;
 }
 
-//Caracteres permitidos
-
 function esValida(expr) {
-  const patron = /^[0-9x-yz+\-*/^().\s\|a-z]+$/i;
+  const patron = /^[0-9xyz+\-*/^=().,'\s\|a-záéíóúñπ√]+$/i;
+  if (!patron.test(expr)) return false;
 
-  const funcionesValidados = [
+  const funcionesValidas = new Set([
     "sin",
     "cos",
     "tan",
+    "sinh",
+    "cosh",
+    "tanh",
     "sqrt",
     "log",
     "ln",
     "exp",
     "diff",
-    "x",
     "y",
+    "x",
     "z",
-  ];
+    "pi",
+    "e",
+    "sen",
+    "seno",
+    "raiz",
+    "exponencial",
+    "tan",
+    "tangente",
+    // por si el usuario escribe palabras normalizables
+    "senh",
+    "cosh",
+    "tanh",
+    "logaritmo",
+    "log10",
+    "cuadrado",
+    "cubico",
+    "cúbico",
+  ]);
 
-  const palabras = expr.toLowerCase().match(/\b[a-zñáéíóú]+\b/g);
-
+  const palabras = expr.toLowerCase().match(/[a-záéíóúñπ]+/g);
   if (!palabras) return true;
 
   for (let p of palabras) {
-    if (!funcionesValidados.includes(p)) {
+    if (!funcionesValidas.has(p)) {
       return false;
     }
   }
-
   return true;
 }
+
+/*Normalizar una condición inicial concreta*/
+function normalizeCondition(cond) {
+  let c = cond.trim().toLowerCase();
+
+  c = c.replace(/\s*=\s*/, "=");
+
+  // transformar derivadas
+  c = c.replace(/([a-z])''''\(/g, "diff($1, x, 4)(");
+  c = c.replace(/([a-z])''''/g, "diff($1, x, 4)");
+  c = c.replace(/([a-z])'''/g, "diff($1, x, 3)");
+  c = c.replace(/([a-z])''/g, "diff($1, x, 2)");
+  c = c.replace(/([a-z])'/g, "diff($1, x)");
+
+  // quitar espacios
+  c = c.replace(/\s+/g, " ").trim();
+
+  return c;
+}
+
+/*Validar formato de cada condición*/
+function esCondicionValida(cond) {
+  const re1 =
+    /^\s*[a-z]('{1,4})?\s*\(\s*-?\d+(\.\d+)?\s*\)\s*=\s*-?\d+(\.\d+)?\s*$/i;
+  const re2 =
+    /^\s*diff\([a-z]\s*,\s*x(,\s*\d+\s*)?\)\s*\(\s*-?\d+(\.\d+)?\s*\)\s*=\s*-?\d+(\.\d+)?\s*$/i;
+
+  return re1.test(cond) || re2.test(cond);
+}
+
+/*Componente principal*/
 function EcDif() {
   const [input, setInput] = useState("");
   const [type, setType] = useState("Homogénea");
+  const [condsInput, setCondsInput] = useState("");
   const [resultExpression, setResultExpression] = useState("");
+  const [resultConditions, setResultConditions] = useState([]);
   const [error, setError] = useState("");
 
   const handleSend = () => {
-    // Validar sintaxis básica
+    setError("");
+    setResultExpression("");
+    setResultConditions([]);
+
+    // validación básica de la ecuación
+    if (!input || input.trim() === "") {
+      setError("Error: Ingresa una ecuación.");
+      return;
+    }
     if (!esValida(input)) {
-      setError("Error: La ecuación contiene caracteres no válidos.");
-      setResultExpression("");
+      setError("Error: La ecuación contiene caracteres o palabras no válidas.");
       return;
     }
 
+    // normalizar ecuación
     const normalizada = validarExpresiones(input);
 
-    // Si quedó vacía o sin sentido
     if (!normalizada || normalizada.trim() === "") {
-      setError("Error: La ecuación no es válida.");
-      setResultExpression("");
+      setError("Error: La ecuación no es válida después de normalizar.");
       return;
     }
 
-    setError("");
+    // procesar condiciones (si hay)
+    let conds = [];
+    if (condsInput && condsInput.trim() !== "") {
+      // separar por comas principales
+      conds = condsInput
+        .split(",")
+        .map((c) => c.trim())
+        .filter(Boolean);
+
+      // validar cada una
+      for (let c of conds) {
+        if (!esCondicionValida(c)) {
+          setError(
+            `❌ Error: Condición inválida: "${c}". Usa formatos como y(0)=2 o y'(0)=1`
+          );
+          return;
+        }
+      }
+
+      // normalizar cada condición (derivadas con ')
+      const normalizedConds = conds.map((c) => normalizeCondition(c));
+      setResultConditions(normalizedConds);
+    }
+
+    // todo OK -> setear para mostrar en procedimiento
     setResultExpression(normalizada);
+    setError("");
   };
 
   return (
@@ -138,13 +223,33 @@ function EcDif() {
               onChange={(e) => setType(e.target.value)}
             >
               <option value="Homogénea">Homogénea</option>
-              <option value="No homogénea">No homogénea</option>
+              <option value="No Homogénea">Variacón de parámetros</option>
+              <option value="No Homogénea">Coeficientes indeterminados</option>
             </select>
           </div>
 
-          {error && <p className="text-danger mt-2">{error}</p>}
+          <small className="text-muted"></small>
         </div>
       </div>
+
+      {/* Condiciones iniciales */}
+      <div className="card shadow-sm mb-4">
+        <div className="card-body">
+          <h5 className="card-title">Condiciones iniciales</h5>
+
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Ej: y(0)=2, y'(0)= -1"
+            value={condsInput}
+            onChange={(e) => setCondsInput(e.target.value)}
+          />
+          <small className="text-muted"></small>
+        </div>
+      </div>
+
+      {/* Mensaje de error */}
+      {error && <div className="alert alert-danger">{error}</div>}
 
       {/* Procedimiento */}
       <div className="card shadow-sm mb-4">
@@ -156,7 +261,27 @@ function EcDif() {
             style={{ minHeight: "120px" }}
           >
             {resultExpression ? (
-              <p>{resultExpression}</p>
+              <>
+                <p>
+                  <strong>Ecuación normalizada:</strong>
+                </p>
+                <pre>{resultExpression}</pre>
+
+                {resultConditions.length > 0 && (
+                  <>
+                    <p>
+                      <strong>Condiciones iniciales:</strong>
+                    </p>
+                    <ul>
+                      {resultConditions.map((c, i) => (
+                        <li key={i}>
+                          <pre>{c}</pre>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </>
             ) : (
               <p className="text-muted">El procedimiento aparecerá aquí...</p>
             )}
